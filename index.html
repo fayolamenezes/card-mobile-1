@@ -70,9 +70,12 @@
   const container = document.querySelector(".card-container");
 
   const totalSpacing = 320;
+
+  // Responsive horizontal shift
   const maxShift = window.innerWidth < 480 ? 40 : window.innerWidth < 768 ? 60 : 80;
   const clampShift = gsap.utils.clamp(-maxShift, maxShift);
 
+  // Staggered pop-in animation on load
   gsap.from(cards, {
     y: -100,
     opacity: 0,
@@ -82,6 +85,7 @@
     ease: "back.out(1.7)"
   });
 
+  // Initial stacking
   cards.forEach((card, i) => {
     gsap.set(card, {
       y: i * 15,
@@ -91,6 +95,7 @@
     });
   });
 
+  // Zig-zag ScrollTrigger animation
   let zigzagScroll = ScrollTrigger.create({
     id: "mainScroll",
     trigger: container,
@@ -116,23 +121,11 @@
           scale: scale,
           rotationZ: rotate
         });
-
-        // Floating effect when scroll progress is almost done
-        if (progress > 0.98 && !card._floating) {
-          card._floating = true;
-          gsap.to(card, {
-            y: '+=10',
-            rotationZ: `+=2`,
-            repeat: -1,
-            yoyo: true,
-            ease: "sine.inOut",
-            duration: 1.5
-          });
-        }
       });
     }
   });
 
+  // Pin fadeout section
   ScrollTrigger.create({
     trigger: ".fadeout-section",
     start: "top top",
@@ -141,6 +134,7 @@
     scrub: true,
   });
 
+  // Slide out with fade after main scroll
   cards.forEach((card, i) => {
     ScrollTrigger.create({
       trigger: ".fadeout-section",
@@ -165,6 +159,7 @@
     });
   });
 
+  // Optional: Tilt cards slightly on mouse move (desktop only)
   if (window.innerWidth > 768) {
     document.addEventListener("mousemove", (e) => {
       const centerX = window.innerWidth / 2;
