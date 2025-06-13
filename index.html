@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Vertical Scroll Swap Cards</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: #111;
+      color: white;
+    }
+
+    .card-pin-section {
+      height: 100vh;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card-pin-inner {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card {
+      position: absolute;
+      width: 80vw;
+      max-width: 350px;
+      background: white;
+      color: black;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      text-align: center;
+      opacity: 0;
+      transform: scale(0.9) translateY(50px);
+    }
+
+    .card h2 {
+      margin: 0 0 0.5rem;
+    }
+
+    .card p {
+      margin: 0;
+      font-size: 0.95rem;
+    }
+
+    .spacer {
+      height: 200vh;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="spacer"></div>
+
+  <section class="card-pin-section">
+    <div class="card-pin-inner">
+      <div class="card" id="card1">
+        <h2>Card 1</h2>
+        <p>Everything in one place.</p>
+      </div>
+      <div class="card" id="card2">
+        <h2>Card 2</h2>
+        <p>Automatically updated with live data.</p>
+      </div>
+      <div class="card" id="card3">
+        <h2>Card 3</h2>
+        <p>Integrated with Gmail and LinkedIn.</p>
+      </div>
+      <div class="card" id="card4">
+        <h2>Card 4</h2>
+        <p>Smart pipeline management.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="spacer"></div>
+
+  <script>
+    gsap.registerPlugin(ScrollTrigger);
+
+    const cards = gsap.utils.toArray(".card");
+
+    cards.forEach((card, i) => {
+      gsap.set(card, { zIndex: cards.length - i }); // top card always higher
+
+      ScrollTrigger.create({
+        trigger: ".card-pin-section",
+        start: () => "top top+=" + (i * window.innerHeight),
+        end: () => "+=" + window.innerHeight,
+        scrub: true,
+        pin: i === 0, // only pin once at the start
+        onEnter: () => {
+          gsap.to(card, {
+            opacity: 1,
+            scale: 1,
+            y: 0,
+            duration: 0.5,
+            ease: "power2.out"
+          });
+        },
+        onLeave: () => {
+          gsap.to(card, {
+            opacity: 0,
+            scale: 0.9,
+            y: -50,
+            duration: 0.4,
+            ease: "power2.in"
+          });
+        },
+        onEnterBack: () => {
+          gsap.to(card, {
+            opacity: 1,
+            scale: 1,
+            y: 0,
+            duration: 0.5,
+            ease: "power2.out"
+          });
+        },
+        onLeaveBack: () => {
+          gsap.to(card, {
+            opacity: 0,
+            scale: 0.9,
+            y: 50,
+            duration: 0.4,
+            ease: "power2.in"
+          });
+        }
+      });
+    });
+  </script>
+
+</body>
+</html>
