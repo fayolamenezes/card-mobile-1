@@ -3,12 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Zig-Zag Cards – Fixed Position</title>
+  <title>Card Zig-Zag with Delayed Fadeout</title>
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
+    * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: sans-serif;
@@ -16,16 +13,13 @@
       color: #fff;
       overflow-x: hidden;
     }
-
     .mobile-section {
       padding: 0;
     }
-
     .card-container {
       position: relative;
       height: 800vh;
     }
-
     .card {
       width: 70vw;
       aspect-ratio: 1 / 1;
@@ -36,13 +30,16 @@
       position: absolute;
       top: 0;
       left: 15vw;
-      transform: scale(1);
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: bold;
       font-size: 1.2rem;
       z-index: 1;
+    }
+    .fadeout-section {
+      height: 100vh;
+      background: transparent;
     }
   </style>
 </head>
@@ -60,75 +57,77 @@
   </div>
 </section>
 
+<section class="fadeout-section"></section>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script>
   gsap.registerPlugin(ScrollTrigger);
 
   const cards = gsap.utils.toArray(".card");
-  const container = document.querySelector(".card-container");
 
-  // Stack initially
+  // Initial stacking
   cards.forEach((card, i) => {
     gsap.set(card, {
-      y: i * 30,
+      y: i * 15,
       zIndex: cards.length - i,
-      scale: 1
+      scale: 1,
+      opacity: 1
     });
   });
 
-  const totalSpacing = 280;
+  const totalSpacing = 320;
   const shiftX = 50;
 
-  // Main scroll animation with smooth scrub
-  ScrollTrigger.create({
+  const zigzag = ScrollTrigger.create({
     id: "mainScroll",
-    trigger: container,
+    trigger: ".card-container",
     start: "top top",
     end: "bottom bottom",
     scrub: 3,
     pin: true,
     onUpdate: (self) => {
       const progress = self.progress;
-
       cards.forEach((card, i) => {
         const isLeft = i % 2 === 0;
         const xTarget = isLeft ? -shiftX : shiftX;
-        const yStack = i * 30;
+        const yStack = i * 15;
         const yZigzag = i * totalSpacing + 100;
         const y = yStack + progress * (yZigzag - yStack);
-
         gsap.to(card, {
           x: progress * xTarget,
           y: y,
-          ease: "power4.out",
-          duration: 0.5,
-          overwrite: "auto"
+          duration: 0.1,
+          overwrite: true
         });
       });
     }
   });
 
-  // Zoom-in after unstacking
-  cards.forEach((card) => {
+  // Fadeout animation AFTER zigzag is finished
+  cards.forEach((card, i) => {
     ScrollTrigger.create({
-      trigger: card,
-      start: "top 45%",
-      end: "top 20%",
+      trigger: ".fadeout-section",
+      start: "top+=" + (i * 100) + " top",
+      end: "top+=" + ((i + 1) * 100) + " top",
       scrub: true,
-      onUpdate: (self) => {
-        const mainScroll = ScrollTrigger.getById("mainScroll");
-        if (mainScroll.progress > 0.1) {
+      onEnter: () => {
+        if (!zigzag.isActive) {
           gsap.to(card, {
-            scale: 1 + 0.15 * self.progress,
-            duration: 0.1,
-            overwrite: "auto"
+            x: "+=200",
+            opacity: 0,
+            duration: 0.5,
+            ease: "power2.out"
           });
-        } else {
+        }
+      },
+      onLeaveBack: () => {
+        if (!zigzag.isActive) {
           gsap.to(card, {
-            scale: 1,
-            duration: 0.1,
-            overwrite: "auto"
+            x: 0,
+            opacity: 1,
+            duration: 0.5,
+            ease: "power2.in"
           });
         }
       }
