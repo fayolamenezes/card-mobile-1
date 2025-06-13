@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Card Zig-Zag with Delayed Fadeout</title>
+  <title>Enhanced Card Zig-Zag</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -34,11 +34,13 @@
       align-items: center;
       justify-content: center;
       font-weight: bold;
-      font-size: 1.2rem;
+      font-size: 1.5rem;
       z-index: 1;
+      transform-style: preserve-3d;
+      transform: perspective(800px);
     }
     .fadeout-section {
-      height: 100vh;
+      height: 150vh;
       background: transparent;
     }
   </style>
@@ -65,6 +67,23 @@
   gsap.registerPlugin(ScrollTrigger);
 
   const cards = gsap.utils.toArray(".card");
+  const container = document.querySelector(".card-container");
+
+  const totalSpacing = 320;
+
+  // Responsive horizontal shift
+  const maxShift = window.innerWidth < 480 ? 40 : window.innerWidth < 768 ? 60 : 80;
+  const clampShift = gsap.utils.clamp(-maxShift, maxShift);
+
+  // Staggered pop-in animation on load
+  gsap.from(cards, {
+    y: -100,
+    opacity: 0,
+    scale: 0.8,
+    stagger: 0.1,
+    duration: 0.6,
+    ease: "back.out(1.7)"
+  });
 
   // Initial stacking
   cards.forEach((card, i) => {
@@ -76,63 +95,88 @@
     });
   });
 
-  const totalSpacing = 320;
-  const shiftX = 50;
-
-  const zigzag = ScrollTrigger.create({
+  // Zig-zag ScrollTrigger animation
+  let zigzagScroll = ScrollTrigger.create({
     id: "mainScroll",
-    trigger: ".card-container",
+    trigger: container,
     start: "top top",
-    end: "bottom bottom",
+    end: "top+=3000 top",
     scrub: 3,
     pin: true,
     onUpdate: (self) => {
       const progress = self.progress;
       cards.forEach((card, i) => {
         const isLeft = i % 2 === 0;
-        const xTarget = isLeft ? -shiftX : shiftX;
-        const yStack = i * 15;
-        const yZigzag = i * totalSpacing + 100;
-        const y = yStack + progress * (yZigzag - yStack);
-        gsap.to(card, {
+        const direction = isLeft ? -1 : 1;
+        const xTarget = clampShift(direction * maxShift);
+        const yStart = i * 15;
+        const yEnd = i * totalSpacing + 100;
+        const yCurrent = yStart + progress * (yEnd - yStart);
+        const scale = 1 + progress * 0.07;
+        const rotate = direction * progress * 4;
+
+        gsap.set(card, {
           x: progress * xTarget,
-          y: y,
-          duration: 0.1,
-          overwrite: true
+          y: yCurrent,
+          scale: scale,
+          rotationZ: rotate
         });
       });
     }
   });
 
-  // Fadeout animation AFTER zigzag is finished
+  // Pin fadeout section
+  ScrollTrigger.create({
+    trigger: ".fadeout-section",
+    start: "top top",
+    end: "bottom bottom",
+    pin: true,
+    scrub: true,
+  });
+
+  // Slide out with fade after main scroll
   cards.forEach((card, i) => {
     ScrollTrigger.create({
       trigger: ".fadeout-section",
-      start: "top+=" + (i * 100) + " top",
-      end: "top+=" + ((i + 1) * 100) + " top",
+      start: () => "top+=" + (i * 100) + " top",
+      end: () => "top+=" + ((i + 1) * 100) + " top",
       scrub: true,
-      onEnter: () => {
-        if (!zigzag.isActive) {
+      onUpdate: (self) => {
+        const progress = self.progress;
+        if (progress > 0 && !ScrollTrigger.getById("mainScroll").isActive) {
           gsap.to(card, {
-            x: "+=200",
-            opacity: 0,
-            duration: 0.5,
-            ease: "power2.out"
-          });
-        }
-      },
-      onLeaveBack: () => {
-        if (!zigzag.isActive) {
-          gsap.to(card, {
-            x: 0,
-            opacity: 1,
-            duration: 0.5,
-            ease: "power2.in"
+            x: "+=250",
+            y: "-=80",
+            opacity: 1 - progress,
+            rotationZ: "+=10",
+            scale: 0.9 + 0.1 * (1 - progress),
+            duration: 0.3,
+            ease: "power2.out",
+            overwrite: true
           });
         }
       }
     });
   });
+
+  // Optional: Tilt cards slightly on mouse move (desktop only)
+  if (window.innerWidth > 768) {
+    document.addEventListener("mousemove", (e) => {
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2;
+      const deltaX = (e.clientX - centerX) / centerX;
+      const deltaY = (e.clientY - centerY) / centerY;
+      cards.forEach(card => {
+        gsap.to(card, {
+          rotationY: deltaX * 5,
+          rotationX: -deltaY * 5,
+          transformPerspective: 800,
+          duration: 0.4,
+          ease: "power1.out"
+        });
+      });
+    });
+  }
 </script>
 
 </body>
