@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Mobile Card Scroll Zoom</title>
+  <title>Zig-Zag Scroll Cards</title>
   <style>
     * {
       box-sizing: border-box;
@@ -14,45 +14,34 @@
       font-family: sans-serif;
       background: #111;
       color: #fff;
+      overflow-x: hidden;
     }
 
     .mobile-section {
-      padding: 0 5vw;
+      padding: 0;
     }
 
     .card-container {
-      display: flex;
-      flex-direction: column;
-      gap: 80px;
-      padding: 100px 0;
+      position: relative;
+      height: 700vh; /* Lots of scroll space */
     }
 
     .card {
-      width: 100%;
-      height: 180px;
-      background: #fff;
-      color: #000;
-      border-radius: 15px;
+      width: 42vw;
+      aspect-ratio: 1 / 1;
+      background: white;
+      color: black;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.3rem;
       font-weight: bold;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
-      transform-origin: center center;
-    }
-
-    .final-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-      padding: 80px 0;
-      opacity: 0;
-      transform: translateY(100px);
-    }
-
-    .final-grid .card {
-      height: 150px;
+      font-size: 1.2rem;
     }
   </style>
 </head>
@@ -60,16 +49,6 @@
 
   <section class="mobile-section">
     <div class="card-container">
-      <div class="card card-1">Card 1</div>
-      <div class="card card-2">Card 2</div>
-      <div class="card card-3">Card 3</div>
-      <div class="card card-4">Card 4</div>
-      <div class="card card-5">Card 5</div>
-      <div class="card card-6">Card 6</div>
-      <div class="card card-7">Card 7</div>
-    </div>
-
-    <div class="final-grid">
       <div class="card">Card 1</div>
       <div class="card">Card 2</div>
       <div class="card">Card 3</div>
@@ -80,49 +59,43 @@
     </div>
   </section>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
   <script>
     gsap.registerPlugin(ScrollTrigger);
 
-    // Animate each card on scroll
-    document.querySelectorAll(".card-container .card").forEach((card, i) => {
-      gsap.fromTo(card, {
-        scale: 0.8,
-        opacity: 0.4
-      }, {
-        scale: 1.15,
-        opacity: 1,
-        duration: 0.4,
-        scrollTrigger: {
-          trigger: card,
-          start: "top 80%",
-          end: "top 30%",
-          scrub: true
-        }
-      });
+    const cards = gsap.utils.toArray(".card");
+    const container = document.querySelector(".card-container");
 
-      gsap.to(card, {
-        scale: 0.8,
-        opacity: 0.3,
-        scrollTrigger: {
-          trigger: card,
-          start: "top 30%",
-          end: "top 0%",
-          scrub: true
-        }
+    // Stack initially
+    cards.forEach((card, i) => {
+      gsap.set(card, {
+        y: i * 40,
+        zIndex: cards.length - i
       });
     });
 
-    // Animate grid reveal
-    gsap.to(".final-grid", {
-      opacity: 1,
-      y: 0,
-      duration: 0.6,
-      scrollTrigger: {
-        trigger: ".final-grid",
-        start: "top 90%",
-        toggleActions: "play none none reverse"
+    ScrollTrigger.create({
+      trigger: container,
+      start: "top top",
+      end: "bottom bottom",
+      scrub: true,
+      pin: true,
+      onUpdate: (self) => {
+        const progress = self.progress;
+
+        cards.forEach((card, i) => {
+          const isEven = i % 2 === 0;
+          const xOffset = isEven ? "-45vw" : "45vw";
+          const yOffset = i * 240 + 80;
+
+          gsap.to(card, {
+            x: progress * parseFloat(xOffset),
+            y: i * 40 + progress * (yOffset - i * 40),
+            ease: "power2.out",
+            duration: 0.3
+          });
+        });
       }
     });
   </script>
